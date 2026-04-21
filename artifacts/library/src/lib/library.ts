@@ -113,7 +113,7 @@ export class MaxHeap {
 
 const STORAGE_KEY = "smart-library-state-v3";
 const SESSION_KEY = "smart-library-session-v3";
-const LOAN_DAYS = 14;
+const LOAN_DAYS = 7;
 
 async function hashPassword(pw: string): Promise<string> {
   const enc = new TextEncoder().encode(pw + "::smart-library::v3");

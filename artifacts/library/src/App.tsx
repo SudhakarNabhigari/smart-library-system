@@ -13,6 +13,8 @@ import { LibrarySystem, type User } from "@/lib/library";
 import { AuthPage } from "@/pages/AuthPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { StudentPage } from "@/pages/StudentPage";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { BookMarked, LogOut, RotateCcw, Shield, GraduationCap, ChevronDown } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -57,12 +59,13 @@ function Dashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
           <div className="flex items-center gap-2">
             <Badge className={
               user.role === "admin"
-                ? "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white border-0"
-                : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-0"
+                ? "bg-gradient-to-r from-emerald-700 to-emerald-500 text-white border-0"
+                : "bg-gradient-to-r from-emerald-500 to-green-400 text-white border-0"
             }>
               {user.role === "admin" ? <Shield className="h-3 w-3 mr-1" /> : <GraduationCap className="h-3 w-3 mr-1" />}
-              {user.role.toUpperCase()}
+              Logged in as {user.role === "admin" ? "Admin" : "Student"}
             </Badge>
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 px-2">
@@ -143,12 +146,14 @@ function AppShell() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppShell />
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AppShell />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

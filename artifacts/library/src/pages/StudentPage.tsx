@@ -56,8 +56,8 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
     const r = lib.issueBook(bookId, currentUser);
     if (!r.ok) { toast({ title: "Cannot borrow", description: r.reason, variant: "destructive" }); return; }
     toast({
-      title: "Book borrowed",
-      description: `Due back on ${new Date(r.loan!.dueAt).toLocaleDateString()}`,
+      title: "Book borrowed (7-day loan)",
+      description: `Return by ${new Date(r.loan!.dueAt).toLocaleString()}`,
     });
     refresh();
   };
@@ -92,7 +92,10 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
           <Card>
             <CardHeader>
               <CardTitle>Browse the Library</CardTitle>
-              <CardDescription>Search by title or author — results update as you type (Trie prefix search).</CardDescription>
+              <CardDescription>
+                Live search — results update as you type, powered by a Trie prefix index.
+                Borrowed books must be returned within <span className="font-semibold text-primary">7 days</span>.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
