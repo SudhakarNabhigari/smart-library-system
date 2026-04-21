@@ -15,7 +15,7 @@ import { AdminPage } from "@/pages/AdminPage";
 import { StudentPage } from "@/pages/StudentPage";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BookMarked, LogOut, RotateCcw, Shield, GraduationCap, ChevronDown } from "lucide-react";
+import { BookMarked, LogOut, RotateCcw, Shield, GraduationCap, ChevronDown, Bell } from "lucide-react";
 
 const queryClient = new QueryClient();
 const lib = new LibrarySystem();
@@ -57,6 +57,23 @@ function Dashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
           </div>
 
           <div className="flex items-center gap-2">
+            {(() => {
+              const notif = user.role === "admin"
+                ? lib.activeLoans().filter((l) => new Date() > new Date(l.dueAt)).length
+                : lib.loansForUser(user.id).filter((l) => !l.returnedAt && new Date() > new Date(l.dueAt)).length;
+              return (
+                <div className="relative">
+                  <Button variant="outline" size="icon" aria-label="Notifications" className="rounded-xl">
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                  {notif > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+                      {notif}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             <Badge className={
               user.role === "admin"
                 ? "bg-gradient-to-r from-emerald-700 to-emerald-500 text-white border-0"

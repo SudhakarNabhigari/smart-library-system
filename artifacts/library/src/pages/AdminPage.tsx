@@ -16,16 +16,17 @@ import {
 import {
   BookOpen, Plus, Trash2, Pencil, TrendingUp, History as HistoryIcon,
   Users, BookCheck, Library as LibraryIcon, AlertCircle, Search,
+  ClipboardList, BookPlus, Trophy,
 } from "lucide-react";
 
 function GradientStat({
   icon: Icon, label, value, gradient,
 }: { icon: typeof BookOpen; label: string; value: string | number; gradient: string }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-md">
+    <Card className="overflow-hidden border-0 shadow-md rounded-2xl card-hover">
       <div className={`h-1.5 bg-gradient-to-r ${gradient}`} />
       <CardContent className="p-5 flex items-center gap-4">
-        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-md`}>
+        <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-md icon-pulse`}>
           <Icon className="h-6 w-6" />
         </div>
         <div>
@@ -124,25 +125,35 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <GradientStat icon={LibraryIcon} label="Titles" value={totalBooks} gradient="from-violet-500 to-purple-600" />
-        <GradientStat icon={BookOpen} label="Total Copies" value={totalCopies} gradient="from-blue-500 to-cyan-500" />
-        <GradientStat icon={BookCheck} label="Currently Issued" value={issuedCount} gradient="from-emerald-500 to-teal-500" />
+        <GradientStat icon={LibraryIcon} label="Titles" value={totalBooks} gradient="from-emerald-700 to-emerald-500" />
+        <GradientStat icon={BookOpen} label="Total Copies" value={totalCopies} gradient="from-emerald-600 to-green-400" />
+        <GradientStat icon={BookCheck} label="Currently Issued" value={issuedCount} gradient="from-teal-600 to-emerald-400" />
         <GradientStat icon={AlertCircle} label="Overdue" value={overdueCount} gradient="from-rose-500 to-orange-500" />
-        <GradientStat icon={Users} label="Students" value={studentCount} gradient="from-amber-500 to-yellow-500" />
-        <GradientStat icon={TrendingUp} label="Total Borrows" value={lib.books.reduce((s, b) => s + b.borrowCount, 0)} gradient="from-pink-500 to-fuchsia-600" />
+        <GradientStat icon={Users} label="Students" value={studentCount} gradient="from-emerald-500 to-lime-400" />
+        <GradientStat icon={TrendingUp} label="Total Borrows" value={lib.books.reduce((s, b) => s + b.borrowCount, 0)} gradient="from-green-700 to-emerald-500" />
       </div>
 
       <Tabs defaultValue="loans" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="loans">Active Loans</TabsTrigger>
-          <TabsTrigger value="catalog">Catalog</TabsTrigger>
-          <TabsTrigger value="add">Add Book</TabsTrigger>
-          <TabsTrigger value="top">Top Borrowed</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 rounded-2xl p-1.5 h-auto gap-1">
+          <TabsTrigger value="loans" className="rounded-xl gap-2 py-2.5">
+            <ClipboardList className="h-4 w-4" /> Active Loans
+          </TabsTrigger>
+          <TabsTrigger value="catalog" className="rounded-xl gap-2 py-2.5">
+            <LibraryIcon className="h-4 w-4" /> Catalog
+          </TabsTrigger>
+          <TabsTrigger value="add" className="rounded-xl gap-2 py-2.5">
+            <BookPlus className="h-4 w-4" /> Add Book
+          </TabsTrigger>
+          <TabsTrigger value="top" className="rounded-xl gap-2 py-2.5">
+            <Trophy className="h-4 w-4" /> Top Borrowed
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl gap-2 py-2.5">
+            <HistoryIcon className="h-4 w-4" /> History
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="loans">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Who has what?</CardTitle>
               <CardDescription>Every book currently checked out, with due-date tracking.</CardDescription>
@@ -164,7 +175,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="row-hover">
                       {activeLoans.map((l) => {
                         const status = loanStatus(l);
                         const heldDays = daysBetween(new Date(), new Date(l.issuedAt));
@@ -203,7 +214,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
         </TabsContent>
 
         <TabsContent value="catalog">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 space-y-0">
               <div>
                 <CardTitle>Catalog</CardTitle>
@@ -244,7 +255,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
                       <TableHead className="text-right w-[120px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className="row-hover">
                     {filteredBooks.map((b) => (
                       <TableRow key={b.id}>
                         <TableCell className="font-mono text-xs text-muted-foreground">{b.id}</TableCell>
@@ -271,7 +282,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
         </TabsContent>
 
         <TabsContent value="add">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Add a New Book</CardTitle>
               <CardDescription>The book is added to the catalog and indexed in the prefix-search Trie.</CardDescription>
@@ -301,7 +312,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
         </TabsContent>
 
         <TabsContent value="top">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Top 5 Most Borrowed</CardTitle>
               <CardDescription>Pulled from a max-heap on borrow count.</CardDescription>
@@ -338,7 +349,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
         </TabsContent>
 
         <TabsContent value="history">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Full Activity History</CardTitle>
               <CardDescription>LIFO stack — newest events first. Includes registrations, logins, issues and returns.</CardDescription>
@@ -357,7 +368,7 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
                         <TableHead>Book</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="row-hover">
                       {history.map((h) => (
                         <TableRow key={h.id}>
                           <TableCell className="text-sm text-muted-foreground">{formatDateTime(h.timestamp)}</TableCell>

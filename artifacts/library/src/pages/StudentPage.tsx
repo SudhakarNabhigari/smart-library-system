@@ -7,16 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { LibrarySystem, type User, formatDateTime, loanStatus, daysBetween } from "@/lib/library";
-import { BookOpen, Search, BookCheck, Clock, Library as LibraryIcon, Sparkles } from "lucide-react";
+import {
+  BookOpen, Search, BookCheck, Clock, Library as LibraryIcon, Sparkles,
+  Compass, ScrollText, History as HistoryIcon, Bell,
+} from "lucide-react";
 
 function GradientStat({
   icon: Icon, label, value, gradient,
 }: { icon: typeof BookOpen; label: string; value: string | number; gradient: string }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-md">
+    <Card className="overflow-hidden border-0 shadow-md rounded-2xl card-hover">
       <div className={`h-1.5 bg-gradient-to-r ${gradient}`} />
       <CardContent className="p-5 flex items-center gap-4">
-        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-md`}>
+        <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-md icon-pulse`}>
           <Icon className="h-6 w-6" />
         </div>
         <div>
@@ -75,21 +78,27 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <GradientStat icon={BookCheck} label="Currently Borrowed" value={activeMyLoans.length} gradient="from-emerald-500 to-teal-500" />
-        <GradientStat icon={Sparkles} label="Books Read" value={totalRead} gradient="from-violet-500 to-purple-600" />
+        <GradientStat icon={BookCheck} label="Currently Borrowed" value={activeMyLoans.length} gradient="from-emerald-700 to-emerald-500" />
+        <GradientStat icon={Sparkles} label="Books Read" value={totalRead} gradient="from-emerald-600 to-green-400" />
         <GradientStat icon={Clock} label="Overdue" value={overdue} gradient="from-rose-500 to-orange-500" />
-        <GradientStat icon={LibraryIcon} label="Catalog Size" value={lib.books.length} gradient="from-blue-500 to-cyan-500" />
+        <GradientStat icon={LibraryIcon} label="Catalog Size" value={lib.books.length} gradient="from-teal-600 to-emerald-400" />
       </div>
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="browse">Browse</TabsTrigger>
-          <TabsTrigger value="my-loans">My Active Loans</TabsTrigger>
-          <TabsTrigger value="history">My History</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 rounded-2xl p-1.5 h-auto">
+          <TabsTrigger value="browse" className="rounded-xl gap-2 py-2.5">
+            <Compass className="h-4 w-4" /> Browse
+          </TabsTrigger>
+          <TabsTrigger value="my-loans" className="rounded-xl gap-2 py-2.5">
+            <ScrollText className="h-4 w-4" /> My Loans
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl gap-2 py-2.5">
+            <HistoryIcon className="h-4 w-4" /> History
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Browse the Library</CardTitle>
               <CardDescription>
@@ -111,32 +120,39 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
               {filteredBooks.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">No books match your search.</div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredBooks.map((b) => {
                     const alreadyBorrowed = activeMyLoans.some((l) => l.bookId === b.id);
                     return (
                       <div
                         key={b.id}
-                        className="rounded-xl border overflow-hidden bg-card shadow-sm hover:shadow-lg transition-shadow"
+                        className="rounded-2xl border overflow-hidden bg-card shadow-sm card-hover group"
                       >
-                        <div className="h-2 bg-gradient-to-r from-violet-500 via-pink-500 to-cyan-500" />
-                        <div className="p-4 space-y-3">
-                          <div>
-                            <div className="font-semibold leading-tight">{b.title}</div>
-                            <div className="text-sm text-muted-foreground">by {b.author}</div>
+                        <div className="h-2 bg-gradient-to-r from-emerald-700 via-emerald-500 to-green-300" />
+                        <div className="p-5 space-y-4">
+                          <div className="flex items-start gap-3">
+                            <div className="h-11 w-11 shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                              <BookOpen className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold leading-tight truncate">{b.title}</div>
+                              <div className="text-sm text-muted-foreground truncate">by {b.author}</div>
+                            </div>
                           </div>
                           <div className="flex items-center justify-between text-xs">
-                            <Badge variant="secondary">{b.genre}</Badge>
+                            <Badge variant="secondary" className="rounded-full">{b.genre}</Badge>
                             <span className={b.availableCopies > 0 ? "text-emerald-600 font-medium" : "text-rose-600 font-medium"}>
                               {b.availableCopies > 0 ? `${b.availableCopies} available` : "All borrowed"}
                             </span>
                           </div>
                           <Button
-                            className="w-full gradient-bg text-white border-0"
+                            className="w-full gradient-bg text-white border-0 rounded-xl shadow-md hover:shadow-lg hover:brightness-110 transition-all"
                             disabled={b.availableCopies === 0 || alreadyBorrowed}
                             onClick={() => handleBorrow(b.id)}
                           >
-                            {alreadyBorrowed ? "Already in your loans" : "Borrow"}
+                            {alreadyBorrowed ? "Already in your loans" : (
+                              <><BookCheck className="h-4 w-4 mr-2" /> Borrow</>
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -149,7 +165,7 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
         </TabsContent>
 
         <TabsContent value="my-loans">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Books you have right now</CardTitle>
               <CardDescription>Return them before the due date to stay in good standing.</CardDescription>
@@ -171,7 +187,7 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="row-hover">
                       {activeMyLoans.map((l) => {
                         const status = loanStatus(l);
                         const heldDays = daysBetween(new Date(), new Date(l.issuedAt));
@@ -206,7 +222,7 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
         </TabsContent>
 
         <TabsContent value="history">
-          <Card>
+          <Card className="rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle>Your borrowing history</CardTitle>
               <CardDescription>Every book you've borrowed and returned.</CardDescription>
@@ -226,7 +242,7 @@ export function StudentPage({ lib, currentUser }: { lib: LibrarySystem; currentU
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="row-hover">
                       {myLoans.map((l) => {
                         const status = loanStatus(l);
                         const days = l.returnedAt
