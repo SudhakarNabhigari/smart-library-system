@@ -20,10 +20,13 @@ import {
 } from "lucide-react";
 
 function GradientStat({
-  icon: Icon, label, value, gradient,
-}: { icon: typeof BookOpen; label: string; value: string | number; gradient: string }) {
+  icon: Icon, label, value, gradient, onClick,
+}: { icon: typeof BookOpen; label: string; value: string | number; gradient: string; onClick?: () => void }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-md rounded-2xl card-hover">
+    <Card
+      onClick={onClick}
+      className={`overflow-hidden border-0 shadow-md rounded-2xl card-hover ${onClick ? "cursor-pointer" : ""}`}
+    >
       <div className={`h-1.5 bg-gradient-to-r ${gradient}`} />
       <CardContent className="p-5 flex items-center gap-4">
         <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow-md icon-pulse`}>
@@ -32,11 +35,14 @@ function GradientStat({
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
           <p className="text-2xl font-bold">{value}</p>
+          {onClick && <p className="text-[10px] text-muted-foreground/70 mt-0.5">Click for details</p>}
         </div>
       </CardContent>
     </Card>
   );
 }
+
+type StatPanel = "titles" | "totalCopies" | "issued" | "overdue" | "students" | "borrows";
 
 export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUser: User }) {
   const { toast } = useToast();
@@ -56,6 +62,8 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
   const [editAuthor, setEditAuthor] = useState("");
   const [editGenre, setEditGenre] = useState("");
   const [editCopies, setEditCopies] = useState("0");
+
+  const [panel, setPanel] = useState<StatPanel | null>(null);
 
   const sortedBooks = useMemo(() => lib.sorted(sortMode), [sortMode, lib.books.length]);
   const filteredBooks = useMemo(() => {
@@ -125,12 +133,12 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <GradientStat icon={LibraryIcon} label="Titles" value={totalBooks} gradient="from-emerald-700 to-emerald-500" />
-        <GradientStat icon={BookOpen} label="Total Copies" value={totalCopies} gradient="from-emerald-600 to-green-400" />
-        <GradientStat icon={BookCheck} label="Currently Issued" value={issuedCount} gradient="from-teal-600 to-emerald-400" />
-        <GradientStat icon={AlertCircle} label="Overdue" value={overdueCount} gradient="from-rose-500 to-orange-500" />
-        <GradientStat icon={Users} label="Students" value={studentCount} gradient="from-emerald-500 to-lime-400" />
-        <GradientStat icon={TrendingUp} label="Total Borrows" value={lib.books.reduce((s, b) => s + b.borrowCount, 0)} gradient="from-green-700 to-emerald-500" />
+        <GradientStat icon={LibraryIcon} label="Titles" value={totalBooks} gradient="from-emerald-700 to-emerald-500" onClick={() => setPanel("titles")} />
+        <GradientStat icon={BookOpen} label="Total Copies" value={totalCopies} gradient="from-emerald-600 to-green-400" onClick={() => setPanel("totalCopies")} />
+        <GradientStat icon={BookCheck} label="Currently Issued" value={issuedCount} gradient="from-teal-600 to-emerald-400" onClick={() => setPanel("issued")} />
+        <GradientStat icon={AlertCircle} label="Overdue" value={overdueCount} gradient="from-rose-500 to-orange-500" onClick={() => setPanel("overdue")} />
+        <GradientStat icon={Users} label="Students" value={studentCount} gradient="from-emerald-500 to-lime-400" onClick={() => setPanel("students")} />
+        <GradientStat icon={TrendingUp} label="Total Borrows" value={lib.books.reduce((s, b) => s + b.borrowCount, 0)} gradient="from-green-700 to-emerald-500" onClick={() => setPanel("borrows")} />
       </div>
 
       <Tabs defaultValue="loans" className="w-full">
@@ -414,7 +422,217 @@ export function AdminPage({ lib, currentUser }: { lib: LibrarySystem; currentUse
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StatDetailsDialog
+        panel={panel}
+        onClose={() => setPanel(null)}
+        lib={lib}
+        currentUser={currentUser}
+        onChanged={refresh}
+      />
     </div>
+  );
+}
+
+function StatDetailsDialog({
+  panel, onClose, lib, currentUser, onChanged,
+}: {
+  panel: StatPanel | null;
+  onClose: () => void;
+  lib: LibrarySystem;
+  currentUser: User;
+  onChanged: () => void;
+}) {
+  const { toast } = useToast();
+  if (!panel) return (
+    <Dialog open={false} onOpenChange={(o) => !o && onClose()}><DialogContent /></Dialog>
+  );
+
+  const titles: Record<StatPanel, { title: string; desc: string }> = {
+    titles: { title: "All Titles", desc: "Every distinct book in the catalog." },
+    totalCopies: { title: "Total Copies", desc: "Per-book breakdown of how many physical copies exist." },
+    issued: { title: "Currently Issued", desc: "Every active loan — who has what and since when." },
+    overdue: { title: "Overdue Loans", desc: "Loans past their 7-day due date." },
+    students: { title: "Registered Students", desc: "All student accounts and their borrowing activity." },
+    borrows: { title: "Total Borrows", desc: "Books ranked by total times borrowed." },
+  };
+
+  const handleForceReturn = (loanId: number) => {
+    const r = lib.returnBook(loanId, currentUser);
+    if (!r.ok) { toast({ title: "Failed", description: r.reason, variant: "destructive" }); return; }
+    toast({ title: "Marked as returned" });
+    onChanged();
+  };
+
+  const renderBody = () => {
+    if (panel === "titles") {
+      const items = lib.sorted("title");
+      return (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead className="w-12">#</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Author</TableHead>
+            <TableHead>Genre</TableHead>
+          </TableRow></TableHeader>
+          <TableBody className="row-hover">
+            {items.map((b, i) => (
+              <TableRow key={b.id}>
+                <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
+                <TableCell className="font-medium">{b.title}</TableCell>
+                <TableCell className="text-muted-foreground">{b.author}</TableCell>
+                <TableCell><Badge variant="secondary" className="rounded-full">{b.genre}</Badge></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (panel === "totalCopies") {
+      const items = lib.sorted("title");
+      return (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">Available</TableHead>
+            <TableHead className="text-right">Issued</TableHead>
+          </TableRow></TableHeader>
+          <TableBody className="row-hover">
+            {items.map((b) => (
+              <TableRow key={b.id}>
+                <TableCell className="font-medium">{b.title}</TableCell>
+                <TableCell className="text-right tabular-nums">{b.totalCopies}</TableCell>
+                <TableCell className="text-right tabular-nums text-emerald-600">{b.availableCopies}</TableCell>
+                <TableCell className="text-right tabular-nums">{b.totalCopies - b.availableCopies}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (panel === "issued" || panel === "overdue") {
+      const all = lib.activeLoans();
+      const items = panel === "overdue"
+        ? all.filter((l) => new Date() > new Date(l.dueAt))
+        : all;
+      if (items.length === 0) {
+        return <div className="text-center py-12 text-muted-foreground">
+          {panel === "overdue" ? "Nothing is overdue right now — great work!" : "No active loans right now."}
+        </div>;
+      }
+      return (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Borrower</TableHead>
+            <TableHead>Book</TableHead>
+            <TableHead>Issued</TableHead>
+            <TableHead>Due</TableHead>
+            <TableHead>Days Held</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow></TableHeader>
+          <TableBody className="row-hover">
+            {items.map((l) => {
+              const s = loanStatus(l);
+              const held = daysBetween(new Date(), new Date(l.issuedAt));
+              return (
+                <TableRow key={l.id}>
+                  <TableCell className="font-medium">{l.username}</TableCell>
+                  <TableCell>{l.bookTitle}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(l.issuedAt)}</TableCell>
+                  <TableCell className="text-sm">{formatDateTime(l.dueAt)}</TableCell>
+                  <TableCell className="tabular-nums">{held}d</TableCell>
+                  <TableCell>
+                    <Badge className={
+                      s.tone === "overdue" ? "bg-rose-500 text-white hover:bg-rose-500"
+                        : "bg-emerald-500 text-white hover:bg-emerald-500"
+                    }>{s.label}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => handleForceReturn(l.id)}>
+                      Mark Returned
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (panel === "students") {
+      const items = lib.users.filter((u) => u.role === "student");
+      if (items.length === 0) return <div className="text-center py-12 text-muted-foreground">No students have registered yet.</div>;
+      return (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Username</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Joined</TableHead>
+            <TableHead className="text-right">Active Loans</TableHead>
+            <TableHead className="text-right">Total Borrowed</TableHead>
+          </TableRow></TableHeader>
+          <TableBody className="row-hover">
+            {items.map((u) => {
+              const userLoans = lib.loansForUser(u.id);
+              const active = userLoans.filter((l) => !l.returnedAt).length;
+              return (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.username}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(u.createdAt)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{active}</TableCell>
+                  <TableCell className="text-right tabular-nums">{userLoans.length}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (panel === "borrows") {
+      const items = lib.sorted("borrow").filter((b) => b.borrowCount > 0);
+      if (items.length === 0) return <div className="text-center py-12 text-muted-foreground">No books have been borrowed yet.</div>;
+      return (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead className="w-12">#</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Author</TableHead>
+            <TableHead className="text-right">Borrows</TableHead>
+          </TableRow></TableHeader>
+          <TableBody className="row-hover">
+            {items.map((b, i) => (
+              <TableRow key={b.id}>
+                <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
+                <TableCell className="font-medium">{b.title}</TableCell>
+                <TableCell className="text-muted-foreground">{b.author}</TableCell>
+                <TableCell className="text-right tabular-nums font-semibold gradient-text">{b.borrowCount}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Dialog open={!!panel} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{titles[panel].title}</DialogTitle>
+          <DialogDescription>{titles[panel].desc}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto rounded-md border">
+          {renderBody()}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
