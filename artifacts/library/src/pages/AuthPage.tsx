@@ -22,6 +22,7 @@ export function AuthPage({
   // Login state
   const [loginId, setLoginId] = useState("");
   const [loginPw, setLoginPw] = useState("");
+  const [loginRole, setLoginRole] = useState<Role>("student");
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Register state
@@ -39,6 +40,15 @@ export function AuthPage({
     setLoginLoading(false);
     if (!r.ok || !r.user) {
       toast({ title: "Login failed", description: r.reason, variant: "destructive" });
+      return;
+    }
+    if (r.user.role !== loginRole) {
+      toast({
+        title: "Wrong portal",
+        description: `This account is registered as a ${r.user.role}. Please switch the role above.`,
+        variant: "destructive",
+      });
+      lib.logout();
       return;
     }
     toast({ title: `Welcome back, ${r.user.username}!` });
@@ -112,6 +122,33 @@ export function AuthPage({
               <TabsContent value="login">
                 <form onSubmit={submitLogin} className="space-y-4">
                   <div className="space-y-2">
+                    <Label>Login as</Label>
+                    <RadioGroup
+                      value={loginRole}
+                      onValueChange={(v) => setLoginRole(v as Role)}
+                      className="grid grid-cols-2 gap-3"
+                    >
+                      <RoleCard
+                        value="student"
+                        active={loginRole === "student"}
+                        title="Student"
+                        desc="Browse & borrow"
+                        icon={<GraduationCap className="h-5 w-5" />}
+                        gradient="from-emerald-500 to-green-400"
+                        idPrefix="login"
+                      />
+                      <RoleCard
+                        value="admin"
+                        active={loginRole === "admin"}
+                        title="Admin"
+                        desc="Manage catalog"
+                        icon={<Shield className="h-5 w-5" />}
+                        gradient="from-emerald-700 to-emerald-500"
+                        idPrefix="login"
+                      />
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Username or Email</Label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -176,7 +213,8 @@ export function AuthPage({
                         title="Student"
                         desc="Borrow & return"
                         icon={<GraduationCap className="h-5 w-5" />}
-                        gradient="from-cyan-500 to-blue-600"
+                        gradient="from-emerald-500 to-green-400"
+                        idPrefix="reg"
                       />
                       <RoleCard
                         value="admin"
@@ -184,7 +222,8 @@ export function AuthPage({
                         title="Admin"
                         desc="Manage catalog"
                         icon={<Shield className="h-5 w-5" />}
-                        gradient="from-fuchsia-500 to-purple-600"
+                        gradient="from-emerald-700 to-emerald-500"
+                        idPrefix="reg"
                       />
                     </RadioGroup>
                   </div>
@@ -220,18 +259,20 @@ function FeatureRow({ icon, title, desc }: { icon: React.ReactNode; title: strin
 }
 
 function RoleCard({
-  value, active, title, desc, icon, gradient,
+  value, active, title, desc, icon, gradient, idPrefix,
 }: {
-  value: string; active: boolean; title: string; desc: string; icon: React.ReactNode; gradient: string;
+  value: string; active: boolean; title: string; desc: string;
+  icon: React.ReactNode; gradient: string; idPrefix: string;
 }) {
+  const id = `${idPrefix}-role-${value}`;
   return (
     <Label
-      htmlFor={`role-${value}`}
+      htmlFor={id}
       className={`relative cursor-pointer rounded-xl p-3 border-2 transition-all ${
         active ? "border-primary shadow-md" : "border-border hover:border-primary/40"
       }`}
     >
-      <RadioGroupItem id={`role-${value}`} value={value} className="sr-only" />
+      <RadioGroupItem id={id} value={value} className="sr-only" />
       <div className="flex items-center gap-3">
         <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${gradient} text-white flex items-center justify-center shadow`}>
           {icon}
